@@ -653,3 +653,249 @@ public class UnifiedLogger {
             logEvent(new DebugEvent(maskedMessage, maskedArgs));
         }
     }
+
+
+
+=====================================
+
+
+all things
+
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import java.util.*;
+import java.util.stream.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+public class UnifiedLogger {
+    private static Logger log = LoggerFactory.getLogger(UnifiedLogger.class);
+
+    static {
+        init();
+    }
+
+    private static void init() {
+        try {
+            LogProfile logProfile = LogProfile.getInstance();
+            log.info("Log profile creation is successful");
+        } catch (Exception e) {
+            log.warn("Log profile creation failed", e);
+        }
+        try {
+            new MetricCollectionManager();
+            log.info("Metric collector creation is successful");
+        } catch (Exception e) {
+            log.warn("Metric collector creation failed", e);
+        }
+    }
+
+    public static void setLogger(Logger logger) {
+        log = logger;
+    }
+
+    // --- Helper Methods ---
+
+    private static Object maskArg(Object arg) {
+        if (arg == null) return null;
+        if (arg instanceof String) return UnifiedLoggerUtil.mask((String) arg);
+        return UnifiedLoggerUtil.maskJson(arg);
+    }
+
+    private static Object[] maskArgs(Object[] args) {
+        if (args == null) return null;
+        return Arrays.stream(args)
+                .map(UnifiedLogger::maskArg)
+                .toArray();
+    }
+
+    private static Object[] merge(Object first, Object[] rest) {
+        Object[] merged = new Object[(rest != null ? rest.length : 0) + 1];
+        merged[0] = first;
+        if (rest != null && rest.length > 0)
+            System.arraycopy(rest, 0, merged, 1, rest.length);
+        return merged;
+    }
+
+    // --- Logging Methods ---
+
+    // DEBUG
+    public static void debug(String message) {
+        message = UnifiedLoggerUtil.mask(message);
+        log.debug(message);
+        if (LogProfile.isActive(DebugEvent.class)) {
+            logEvent(new DebugEvent(message));
+        }
+    }
+
+    public static void debug(String message, Object arg1) {
+        message = UnifiedLoggerUtil.mask(message);
+        Object maskedArg1 = maskArg(arg1);
+        log.debug(message, maskedArg1);
+        if (LogProfile.isActive(DebugEvent.class)) {
+            logEvent(new DebugEvent(message, new Object[]{maskedArg1}));
+        }
+    }
+
+    public static void debug(String message, Object arg1, Object arg2) {
+        message = UnifiedLoggerUtil.mask(message);
+        Object maskedArg1 = maskArg(arg1);
+        Object maskedArg2 = maskArg(arg2);
+        log.debug(message, maskedArg1, maskedArg2);
+        if (LogProfile.isActive(DebugEvent.class)) {
+            logEvent(new DebugEvent(message, new Object[]{maskedArg1, maskedArg2}));
+        }
+    }
+
+    public static void debug(String message, Object... args) {
+        message = UnifiedLoggerUtil.mask(message);
+        Object[] maskedArgs = maskArgs(args);
+        log.debug(message, maskedArgs);
+        if (LogProfile.isActive(DebugEvent.class)) {
+            logEvent(new DebugEvent(message, maskedArgs));
+        }
+    }
+
+    // INFO
+    public static void info(String message) {
+        message = UnifiedLoggerUtil.mask(message);
+        log.info(message);
+        if (LogProfile.isActive(InfoEvent.class)) {
+            logEvent(new InfoEvent(message));
+        }
+    }
+
+    public static void info(String message, Object arg1) {
+        message = UnifiedLoggerUtil.mask(message);
+        Object maskedArg1 = maskArg(arg1);
+        log.info(message, maskedArg1);
+        if (LogProfile.isActive(InfoEvent.class)) {
+            logEvent(new InfoEvent(message, new Object[]{maskedArg1}));
+        }
+    }
+
+    public static void info(String message, Object arg1, Object arg2) {
+        message = UnifiedLoggerUtil.mask(message);
+        Object maskedArg1 = maskArg(arg1);
+        Object maskedArg2 = maskArg(arg2);
+        log.info(message, maskedArg1, maskedArg2);
+        if (LogProfile.isActive(InfoEvent.class)) {
+            logEvent(new InfoEvent(message, new Object[]{maskedArg1, maskedArg2}));
+        }
+    }
+
+    public static void info(String message, Object... args) {
+        message = UnifiedLoggerUtil.mask(message);
+        Object[] maskedArgs = maskArgs(args);
+        log.info(message, maskedArgs);
+        if (LogProfile.isActive(InfoEvent.class)) {
+            logEvent(new InfoEvent(message, maskedArgs));
+        }
+    }
+
+    // WARN
+    public static void warn(String message) {
+        message = UnifiedLoggerUtil.mask(message);
+        log.warn(message);
+        if (LogProfile.isActive(WarningEvent.class)) {
+            logEvent(new WarningEvent(message, null));
+        }
+    }
+
+    public static void warn(String message, Object... args) {
+        message = UnifiedLoggerUtil.mask(message);
+        Object[] maskedArgs = maskArgs(args);
+        log.warn(message, maskedArgs);
+        if (LogProfile.isActive(WarningEvent.class)) {
+            logEvent(new WarningEvent(message, null, maskedArgs));
+        }
+    }
+
+    public static void warn(String message, Throwable excp) {
+        message = UnifiedLoggerUtil.mask(message);
+        String exceptionStr = UnifiedLoggerUtil.mask(CommonUtil.stackTrace(excp));
+        log.warn(message + " Exception is: {} ", exceptionStr);
+        if (LogProfile.isActive(WarningEvent.class)) {
+            logEvent(new WarningEvent(message, exceptionStr));
+        }
+    }
+
+    public static void warn(String message, Throwable excp, Object... args) {
+        message = UnifiedLoggerUtil.mask(message);
+        String exceptionStr = UnifiedLoggerUtil.mask(CommonUtil.stackTrace(excp));
+        Object[] maskedArgs = maskArgs(args);
+        log.warn("Exception is {} " + message, merge(exceptionStr, maskedArgs));
+        if (LogProfile.isActive(WarningEvent.class)) {
+            logEvent(new WarningEvent(message, exceptionStr, maskedArgs));
+        }
+    }
+
+    // ERROR
+    public static void error(String message) {
+        message = UnifiedLoggerUtil.mask(message);
+        log.error(message);
+        if (LogProfile.isActive(ErrorEvent.class)) {
+            logEvent(new ErrorEvent(message, null));
+        }
+    }
+
+    public static void error(String message, Object... args) {
+        message = UnifiedLoggerUtil.mask(message);
+        Object[] maskedArgs = maskArgs(args);
+        log.error(message, maskedArgs);
+        if (LogProfile.isActive(ErrorEvent.class)) {
+            logEvent(new ErrorEvent(message, null, maskedArgs));
+        }
+    }
+
+    public static void error(String message, Throwable excp) {
+        message = UnifiedLoggerUtil.mask(message);
+        String exceptionStr = UnifiedLoggerUtil.mask(CommonUtil.stackTrace(excp));
+        log.error(message + " Exception is: {} ", exceptionStr);
+        if (LogProfile.isActive(ErrorEvent.class)) {
+            logEvent(new ErrorEvent(message, exceptionStr));
+        }
+    }
+
+    public static void error(String message, Throwable excp, Object... args) {
+        message = UnifiedLoggerUtil.mask(message);
+        String exceptionStr = UnifiedLoggerUtil.mask(CommonUtil.stackTrace(excp));
+        Object[] maskedArgs = maskArgs(args);
+        log.error("Exception is {} " + message, merge(exceptionStr, maskedArgs));
+        if (LogProfile.isActive(ErrorEvent.class)) {
+            logEvent(new ErrorEvent(message, exceptionStr, maskedArgs));
+        }
+    }
+
+    // --- Event Logging ---
+
+    private static void logEvent(Event event) {
+        StackTraceElement trace = Thread.currentThread().getStackTrace()[LogProfile.getInstance().getCallingClassDepth()];
+        logEvent(event, trace.getClassName(), trace.getMethodName(), trace.getLineNumber());
+    }
+
+    public static void logEvent(Event event, String className, String methodName, int lineNumber) {
+        event.setClassName(className);
+        event.setMethodName(methodName);
+        event.setLineNumber(lineNumber);
+        event.setThreadName(Thread.currentThread().getId() + "-" + Thread.currentThread().getName());
+        log0(event);
+    }
+
+    private static void log0(Event event) {
+        event.setLogTimestamp(TimeUtil.timeNow());
+        if (StringUtils.isBlank(event.getCorrelationId())) {
+            event.setCorrelationId(RequestInfoHolder.getCorrelationId());
+        }
+        Map<String, String> contextMap = MDC.getCopyOfContextMap();
+        if (contextMap != null && !contextMap.isEmpty()) {
+            JsonObject jsonObject = new JsonObject();
+            for (Map.Entry<String, String> contextEntry : contextMap.entrySet()) {
+                jsonObject.put(contextEntry.getKey(), contextEntry.getValue());
+            }
+            event.setAdditionalField(jsonObject);
+        }
+        LogProfile.handle(event);
+    }
+}
